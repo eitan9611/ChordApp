@@ -20,8 +20,8 @@ export default function PianoKeyboard({ chord }) {
   return (
     <div className="flex flex-col items-center gap-2 w-full">
       <div
-        className="relative select-none"
-        style={{ width: "100%", maxWidth: 360, height: 120 }}
+        className="relative select-none w-full"
+        style={{ height: 120 }}
       >
         {/* White keys */}
         <div className="flex h-full gap-[2px]">

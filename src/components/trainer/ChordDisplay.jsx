@@ -5,7 +5,7 @@ import PianoKeyboard from "./PianoKeyboard";
 
 export default function ChordDisplay({ currentChord, nextChord, showNext, progress, isRunning }) {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full">
       {/* Progress ring with chord inside */}
       <div className="relative flex items-center justify-center">
         <ProgressRing progress={isRunning ? progress : 1} size={260} strokeWidth={5} />
@@ -23,11 +23,6 @@ export default function ChordDisplay({ currentChord, nextChord, showNext, progre
             </motion.span>
           </AnimatePresence>
         </div>
-      </div>
-
-      {/* Piano keyboard */}
-      <div className="w-full max-w-sm px-2">
-        <PianoKeyboard chord={currentChord} />
       </div>
 
       {/* Next chord preview */}
@@ -48,6 +43,11 @@ export default function ChordDisplay({ currentChord, nextChord, showNext, progre
           </AnimatePresence>
         </div>
       )}
+
+      {/* Piano keyboard — full width on mobile, capped on desktop */}
+      <div className="w-full sm:max-w-sm px-3 sm:px-2">
+        <PianoKeyboard chord={currentChord} />
+      </div>
     </div>
   );
 }
