@@ -1,10 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Square, Settings, X, Music, RotateCcw } from "lucide-react";
+import { Play, Square, Settings, X, Music, RotateCcw, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChordDisplay from "../components/trainer/ChordDisplay";
 import ChordBank from "../components/trainer/ChordBank";
 import TrainerSettings from "../components/trainer/TrainerSettings";
+import DeleteAccountModal from "../components/trainer/DeleteAccountModal";
 import { playClick } from "../lib/metronomeEngine";
 
 function shuffleQueue(chords, lastChord) {
@@ -38,6 +39,7 @@ export default function Trainer() {
   const [showNext, setShowNext] = useState(true);
   const [metronomeOn, setMetronomeOn] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Runtime
   const [isRunning, setIsRunning] = useState(false);
@@ -159,6 +161,38 @@ export default function Trainer() {
     };
   }, []);
 
+  // Back button: close settings panel if open, otherwise let browser handle it
+  useEffect(() => {
+    const handleBack = (e) => {
+      if (settingsOpen) {
+        e.preventDefault();
+        setSettingsOpen(false);
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handleBack);
+    return () => window.removeEventListener("popstate", handleBack);
+  }, [settingsOpen]);
+
+  // Pull-to-refresh: reload page on downward swipe from top
+  useEffect(() => {
+    let startY = 0;
+    const onTouchStart = (e) => { startY = e.touches[0].clientY; };
+    const onTouchEnd = (e) => {
+      const delta = e.changedTouches[0].clientY - startY;
+      if (delta > 80 && window.scrollY === 0 && !isRunning) {
+        window.location.reload();
+      }
+    };
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [isRunning]);
+
   // Stop if chords change while running
   useEffect(() => {
     if (isRunning && selectedChords.length < 2) stop();
@@ -189,28 +223,36 @@ export default function Trainer() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {showDeleteModal && <DeleteAccountModal onClose={() => setShowDeleteModal(false)} />}
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+      <header className="flex items-center justify-between px-4 sm:px-4 py-3 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <Music className="w-5 h-5 text-primary" />
+          <Music className="w-5 h-5 sm:w-5 sm:h-5 text-primary" />
           <h1 className="text-base font-bold tracking-tight">Chord Trainer</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm text-muted-foreground tabular-nums">
+        <div className="flex items-center gap-2 sm:gap-2">
+          <span className="font-mono text-sm sm:text-sm text-muted-foreground tabular-nums">
             {formatTime(elapsedMs)}
           </span>
           <button
             onClick={resetTimer}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="p-1.5 sm:p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             title="Reset timer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="p-1.5 sm:p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors"
+            title="Delete account"
+          >
+            <UserX className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
           </button>
         </div>
       </header>
 
       {/* Main display area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-6">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-6 w-full max-w-lg mx-auto sm:max-w-none">
         <ChordDisplay
           currentChord={currentChord}
           nextChord={nextChord}
@@ -220,7 +262,7 @@ export default function Trainer() {
         />
 
         {/* Mode info chip */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/60 rounded-full px-4 py-1.5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/60 rounded-full px-5 py-2">
           {mode === "seconds" ? (
             <span>Every <span className="font-mono font-bold text-foreground">{intervalSeconds}s</span></span>
           ) : (
@@ -232,13 +274,13 @@ export default function Trainer() {
         </div>
 
         {/* Control buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 sm:gap-4">
           <Button
             onClick={handleToggle}
             disabled={selectedChords.length < 2}
             size="lg"
             className={`
-              rounded-full h-16 w-16 p-0 transition-all duration-200 shadow-lg
+              rounded-full h-20 w-20 sm:h-16 sm:w-16 p-0 transition-all duration-200 shadow-lg
               ${isRunning
                 ? "bg-destructive hover:bg-destructive/90 shadow-destructive/25"
                 : "bg-primary hover:bg-primary/90 shadow-primary/25"
@@ -246,21 +288,21 @@ export default function Trainer() {
             `}
           >
             {isRunning ? (
-              <Square className="w-6 h-6 fill-current" />
+              <Square className="w-8 h-8 sm:w-6 sm:h-6 fill-current" />
             ) : (
-              <Play className="w-7 h-7 fill-current ml-0.5" />
+              <Play className="w-9 h-9 sm:w-7 sm:h-7 fill-current ml-0.5" />
             )}
           </Button>
           <Button
             onClick={() => setSettingsOpen(!settingsOpen)}
             variant="secondary"
             size="lg"
-            className="rounded-full h-14 w-14 p-0"
+            className="rounded-full h-16 w-16 sm:h-14 sm:w-14 p-0"
           >
             {settingsOpen ? (
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6 sm:w-5 sm:h-5" />
             ) : (
-              <Settings className="w-5 h-5" />
+              <Settings className="w-6 h-6 sm:w-5 sm:h-5" />
             )}
           </Button>
         </div>
