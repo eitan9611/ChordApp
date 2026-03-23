@@ -8,23 +8,10 @@ import TrainerSettings from "../components/trainer/TrainerSettings";
 import DeleteAccountModal from "../components/trainer/DeleteAccountModal";
 import { playClick } from "../lib/metronomeEngine";
 
-function shuffleQueue(chords, lastChord) {
-  const pool = chords.filter((c) => c !== lastChord);
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  if (lastChord && chords.includes(lastChord)) {
-    pool.push(lastChord);
-  }
-  return pool;
-}
-
-function pickNext(queueRef, chords, lastChord) {
-  if (queueRef.current.length === 0) {
-    queueRef.current = shuffleQueue(chords, lastChord);
-  }
-  return queueRef.current.shift();
+function pickRandom(chords, lastChord) {
+  // Pure random, just avoid immediate repeat
+  const pool = chords.length > 1 ? chords.filter((c) => c !== lastChord) : chords;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 export default function Trainer() {
@@ -49,7 +36,6 @@ export default function Trainer() {
   const [elapsedMs, setElapsedMs] = useState(0);
   const accumulatedMsRef = useRef(0);
 
-  const queueRef = useRef([]);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
   const chordStartRef = useRef(null);
@@ -80,10 +66,8 @@ export default function Trainer() {
     const chords = selectedChordsRef.current;
     if (chords.length === 0) return;
 
-    const next = pickNext(queueRef, chords, currentChordRef.current);
-    const afterNext = pickNext(queueRef, chords, next);
-    // Put afterNext back to front of queue so it's actually next
-    queueRef.current.unshift(afterNext);
+    const next = pickRandom(chords, currentChordRef.current);
+    const afterNext = pickRandom(chords, next);
 
     setCurrentChord(next);
     setNextChord(afterNext);
@@ -111,7 +95,6 @@ export default function Trainer() {
   const start = useCallback(() => {
     if (selectedChords.length < 2) return;
 
-    queueRef.current = [];
     advanceChord();
     setIsRunning(true);
     sessionStartRef.current = Date.now();
