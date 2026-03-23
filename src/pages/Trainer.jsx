@@ -42,6 +42,7 @@ export default function Trainer() {
   const beatCountRef = useRef(0);
   const sessionStartRef = useRef(null);
   const sessionTimerRef = useRef(null);
+  const nextChordRef = useRef(null); // tracks the committed "next" chord
 
   // Refs for latest state in intervals
   const selectedChordsRef = useRef(selectedChords);
@@ -62,12 +63,16 @@ export default function Trainer() {
     return (60 / bpm) * 1000;
   }, [mode, intervalSeconds, bpm]);
 
-  const advanceChord = useCallback(() => {
+  const advanceChord = useCallback((isFirst = false) => {
     const chords = selectedChordsRef.current;
     if (chords.length === 0) return;
 
-    const next = pickRandom(chords, currentChordRef.current);
+    // On first call, pick fresh. On subsequent calls, use the committed nextChordRef.
+    const next = isFirst ? pickRandom(chords, null) : (nextChordRef.current ?? pickRandom(chords, currentChordRef.current));
     const afterNext = pickRandom(chords, next);
+
+    nextChordRef.current = afterNext;
+    currentChordRef.current = next;
 
     setCurrentChord(next);
     setNextChord(afterNext);
@@ -95,7 +100,7 @@ export default function Trainer() {
   const start = useCallback(() => {
     if (selectedChords.length < 2) return;
 
-    advanceChord();
+    advanceChord(true);
     setIsRunning(true);
     sessionStartRef.current = Date.now();
     chordStartRef.current = Date.now();
